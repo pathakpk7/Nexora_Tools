@@ -10,7 +10,6 @@ import {
   RotateCcw,
   CheckCircle2,
   ExternalLink,
-  Sparkles,
 } from 'lucide-react';
 import { OverlayBusterService, BustReport, BusterStats } from '../services/overlaybuster';
 
@@ -68,8 +67,6 @@ export const OverlayBusterPopup: React.FC = () => {
             if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('about:')) {
               setIsInternalPage(true);
               setCurrentDomain('Internal Browser Tab');
-            } else if (url.includes('demo.html')) {
-              setCurrentDomain('OverlayBuster Demo Arena');
             } else {
               try {
                 const parsed = new URL(url);
@@ -182,12 +179,6 @@ export const OverlayBusterPopup: React.FC = () => {
     }
   };
 
-  const openDemoPage = () => {
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.create({ url: chrome.runtime.getURL('demo.html') });
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-slate-900 text-slate-100 select-none">
       {/* Header */}
@@ -211,14 +202,6 @@ export const OverlayBusterPopup: React.FC = () => {
 
         <div className="flex items-center gap-1">
           <button
-            onClick={openDemoPage}
-            className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/50 rounded-lg transition-colors border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1"
-            title="Open Demo Paywall Page"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Demo</span>
-          </button>
-          <button
             onClick={openDashboard}
             className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
             title="Open Dashboard"
@@ -232,21 +215,14 @@ export const OverlayBusterPopup: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
         {/* Internal Browser Page Warning Banner */}
         {isInternalPage && (
-          <div className="p-3 bg-amber-500/15 border border-amber-500/30 rounded-xl space-y-2 text-xs text-amber-200">
-            <div className="flex items-center gap-2 font-semibold text-amber-300">
+          <div className="p-3 bg-slate-800/80 border border-slate-700/60 rounded-xl space-y-1.5 text-xs text-slate-300">
+            <div className="flex items-center gap-2 font-semibold text-slate-200">
               <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span>Internal Browser Tab</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-amber-200/90">
-              Chrome restricts extensions from modifying <code className="bg-amber-950/60 px-1 py-0.5 rounded">chrome://</code> pages. To test OverlayBuster in action, launch the built-in interactive demo site!
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              Chrome restricts extensions from modifying <code className="bg-slate-900 px-1 py-0.5 rounded text-slate-300">chrome://</code> pages. Navigate to any website to manage popups and overlays.
             </p>
-            <button
-              onClick={openDemoPage}
-              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow transition"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
-              <span>Launch Live Paywall Demo Site</span>
-            </button>
           </div>
         )}
 

@@ -117,18 +117,6 @@ export const OverlayBusterDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 text-xs text-slate-400">
-            <button
-              onClick={() => {
-                if (typeof chrome !== 'undefined' && chrome.tabs) {
-                  chrome.tabs.create({ url: chrome.runtime.getURL('demo.html') });
-                } else {
-                  window.location.href = 'demo.html';
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition font-semibold"
-            >
-              <span>🧪 Open Live Demo Arena</span>
-            </button>
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               Engine Active (MV3)
