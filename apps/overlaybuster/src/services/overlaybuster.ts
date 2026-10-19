@@ -34,6 +34,7 @@ export const KNOWN_OVERLAY_SELECTORS = [
   '[id*="paywall" i]',
   '[class*="subscribe-modal" i]',
   '[class*="subscription-prompt" i]',
+  '[class*="subscription-modal" i]',
   '[class*="regwall" i]',
   '[id*="regwall" i]',
   '[class*="meteredContent" i] ~ [class*="overlay" i]',
@@ -43,12 +44,14 @@ export const KNOWN_OVERLAY_SELECTORS = [
   '[class*="newsletter-popup" i]',
   '[class*="newsletter-modal" i]',
   '[class*="email-signup-modal" i]',
+  '[class*="email-modal" i]',
   '[class*="interstitial" i]',
   '[id*="interstitial" i]',
   // Anti-adblock banners & overlays
   '[class*="adblock-overlay" i]',
   '[class*="adblock-modal" i]',
   '[class*="fc-ab-root" i]',
+  '[class*="adblock-blocker" i]',
   'div[id*="sp_message_container" i]',
   'div[class*="sp_message" i]',
   // Generic blocking modal backdrops
@@ -60,6 +63,17 @@ export const KNOWN_OVERLAY_SELECTORS = [
   '[id*="gatekeeper" i]',
   'div[class*="tp-backdrop" i]',
   'div[class*="tp-modal" i]',
+  'div[class*="article-gate" i]',
+  'div[id*="article-gate" i]',
+  'dialog[open]',
+  '[role="dialog"][aria-modal="true"]',
+  '[role="dialog"]',
+  '.modal-open-overlay',
+  '.sweet-alert',
+  '.swal2-container',
+  // Cookie / consent blocking banners
+  '[id*="onetrust-consent-sdk" i]',
+  '[id*="cmp-modal" i]',
 ];
 
 export const CAPTCHA_SELECTORS = [
@@ -129,7 +143,12 @@ export class OverlayBusterService {
   static unlockScroll(doc: Document = document): boolean {
     let modified = false;
 
-    const elementsToFix = [doc.documentElement, doc.body];
+    const elementsToFix: (HTMLElement | null)[] = [doc.documentElement, doc.body];
+    try {
+      const wrappers = doc.querySelectorAll('#app, #__next, #root, [class*="site-wrapper" i], [class*="main-wrapper" i]');
+      wrappers.forEach((w) => elementsToFix.push(w as HTMLElement));
+    } catch {}
+
     elementsToFix.forEach((el) => {
       if (!el) return;
 
@@ -218,14 +237,15 @@ export class OverlayBusterService {
         const position = style.position;
         const zIndex = parseInt(style.zIndex, 10);
 
-        if ((position === 'fixed' || position === 'absolute') && zIndex >= 800) {
+        if ((position === 'fixed' || position === 'absolute') && (isNaN(zIndex) || zIndex >= 50)) {
           const rect = htmlEl.getBoundingClientRect();
           const winWidth = window.innerWidth || 1024;
           const winHeight = window.innerHeight || 768;
 
           // Covers substantial viewport portion (modal backdrop or popup)
           const isLargeOverlay =
-            rect.width >= winWidth * 0.4 && rect.height >= winHeight * 0.3;
+            (rect.width >= winWidth * 0.4 && rect.height >= winHeight * 0.3) ||
+            (rect.width >= winWidth * 0.8 && rect.height >= winHeight * 0.8);
 
           const textContent = (htmlEl.textContent || '').toLowerCase();
           const hasGatekeeperSignals =
@@ -233,14 +253,18 @@ export class OverlayBusterService {
             textContent.includes('adblock') ||
             textContent.includes('disable your ad blocker') ||
             textContent.includes('turn off your adblocker') ||
+            textContent.includes('turn off your ad blocker') ||
             textContent.includes('create an account to continue') ||
             textContent.includes('remaining articles') ||
+            textContent.includes('free articles') ||
             textContent.includes('newsletter') ||
             textContent.includes('accept cookies') ||
             textContent.includes('agree & close') ||
+            textContent.includes('continue reading') ||
+            textContent.includes('sign in to read') ||
             textContent.includes('paywall');
 
-          if (isLargeOverlay || hasGatekeeperSignals) {
+          if ((isLargeOverlay && hasGatekeeperSignals) || (isLargeOverlay && zIndex >= 500)) {
             if (this.isSafelyRemovable(htmlEl)) {
               htmlEl.remove();
               count++;

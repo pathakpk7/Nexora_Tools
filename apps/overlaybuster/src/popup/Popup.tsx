@@ -10,12 +10,14 @@ import {
   RotateCcw,
   CheckCircle2,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { OverlayBusterService, BustReport, BusterStats } from '../services/overlaybuster';
 
 export const OverlayBusterPopup: React.FC = () => {
-  const [currentDomain, setCurrentDomain] = useState<string>('Current Website');
+  const [currentDomain, setCurrentDomain] = useState<string>('Detecting page...');
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
+  const [isInternalPage, setIsInternalPage] = useState<boolean>(false);
   const [isEnabled, setIsEnabled] = useState<boolean>(true);
   const [statusReport, setStatusReport] = useState<BustReport>({
     scrollUnlocked: false,
@@ -35,35 +37,67 @@ export const OverlayBusterPopup: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string>('');
 
   useEffect(() => {
-    // 1. Fetch active tab
+    initTabAndStats();
+  }, []);
+
+  const initTabAndStats = async () => {
+    // 1. Multi-tiered active tab resolution
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        const active = tabs[0];
-        if (active?.id && active.url) {
-          setActiveTabId(active.id);
-          try {
-            const parsed = new URL(active.url);
-            const domain = parsed.hostname.replace(/^www\./, '');
-            setCurrentDomain(domain);
+      try {
+        let activeTab: chrome.tabs.Tab | null = null;
 
-            const siteConfig = await OverlayBusterService.getSiteConfig(domain);
-            setIsEnabled(siteConfig.enabled);
+        // Try last focused window first (critical when popup has focus)
+        const focused = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (focused[0]?.id) activeTab = focused[0];
 
-            // Fetch live status from content script
-            chrome.tabs.sendMessage(active.id, { type: 'GET_PAGE_STATUS' }, (res) => {
-              if (chrome.runtime.lastError) return;
-              if (res?.report) {
-                setStatusReport(res.report);
-              }
-            });
-          } catch {}
+        if (!activeTab) {
+          const current = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (current[0]?.id) activeTab = current[0];
         }
-      });
+
+        if (!activeTab) {
+          const anyActive = await chrome.tabs.query({ active: true });
+          if (anyActive[0]?.id) activeTab = anyActive[0];
+        }
+
+        if (activeTab?.id) {
+          setActiveTabId(activeTab.id);
+
+          if (activeTab.url) {
+            const url = activeTab.url;
+            if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('about:')) {
+              setIsInternalPage(true);
+              setCurrentDomain('Internal Browser Tab');
+            } else if (url.includes('demo.html')) {
+              setCurrentDomain('OverlayBuster Demo Arena');
+            } else {
+              try {
+                const parsed = new URL(url);
+                const domain = parsed.hostname.replace(/^www\./, '');
+                setCurrentDomain(domain);
+
+                const siteConfig = await OverlayBusterService.getSiteConfig(domain);
+                setIsEnabled(siteConfig.enabled);
+              } catch {
+                setCurrentDomain('Current Webpage');
+              }
+            }
+          }
+
+          // Fetch live status from content script
+          chrome.tabs.sendMessage(activeTab.id, { type: 'GET_PAGE_STATUS' }, (res) => {
+            if (chrome.runtime.lastError) return;
+            if (res?.report) {
+              setStatusReport(res.report);
+            }
+          });
+        }
+      } catch {}
     }
 
     // 2. Fetch lifetime stats
     OverlayBusterService.getStats().then(setStats);
-  }, []);
+  };
 
   const handleToggleDomain = async () => {
     const nextState = !isEnabled;
@@ -81,34 +115,76 @@ export const OverlayBusterPopup: React.FC = () => {
   const handleBustPage = () => {
     if (!activeTabId) return;
     setIsProcessing(true);
+
     chrome.tabs.sendMessage(activeTabId, { type: 'TRIGGER_AUTO_BUST' }, (res) => {
-      setIsProcessing(false);
-      if (res?.report) {
-        setStatusReport(res.report);
-        setStatusMessage('⚡ Overlays & scroll lock cleared!');
-        OverlayBusterService.getStats().then(setStats);
+      if (chrome.runtime.lastError || !res) {
+        // Content script was not yet injected! Inject it directly via scripting API
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: activeTabId },
+            files: ['content.js'],
+          },
+          () => {
+            chrome.tabs.sendMessage(activeTabId, { type: 'TRIGGER_AUTO_BUST' }, (retryRes) => {
+              setIsProcessing(false);
+              if (retryRes?.report) {
+                setStatusReport(retryRes.report);
+                setStatusMessage('⚡ Overlays & scroll lock cleared!');
+              } else {
+                setStatusMessage('⚡ Bust pass applied to page!');
+              }
+              OverlayBusterService.getStats().then(setStats);
+              setTimeout(() => setStatusMessage(''), 2500);
+            });
+          }
+        );
       } else {
-        setStatusMessage('Bust pass triggered.');
+        setIsProcessing(false);
+        if (res?.report) {
+          setStatusReport(res.report);
+          setStatusMessage('⚡ Overlays & scroll lock cleared!');
+        } else {
+          setStatusMessage('⚡ Bust pass applied!');
+        }
+        OverlayBusterService.getStats().then(setStats);
+        setTimeout(() => setStatusMessage(''), 2500);
       }
-      setTimeout(() => setStatusMessage(''), 2500);
     });
   };
 
   const handleStartZap = () => {
     if (!activeTabId) return;
-    chrome.tabs.sendMessage(activeTabId, { type: 'START_ZAP_MODE' });
+    chrome.tabs.sendMessage(activeTabId, { type: 'START_ZAP_MODE' }, () => {
+      if (chrome.runtime.lastError) {
+        chrome.scripting.executeScript({ target: { tabId: activeTabId }, files: ['content.js'] }, () => {
+          chrome.tabs.sendMessage(activeTabId, { type: 'START_ZAP_MODE' });
+        });
+      }
+    });
     window.close(); // Close popup so user can click directly on page elements
   };
 
   const handleReaderMode = () => {
     if (!activeTabId) return;
-    chrome.tabs.sendMessage(activeTabId, { type: 'TRIGGER_READER_MODE' });
+    chrome.tabs.sendMessage(activeTabId, { type: 'TRIGGER_READER_MODE' }, () => {
+      if (chrome.runtime.lastError) {
+        chrome.scripting.executeScript({ target: { tabId: activeTabId }, files: ['content.js'] }, () => {
+          chrome.tabs.sendMessage(activeTabId, { type: 'TRIGGER_READER_MODE' });
+        });
+      }
+    });
     window.close();
   };
 
   const openDashboard = () => {
     if (typeof chrome !== 'undefined' && chrome.tabs) {
       chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+    }
+  };
+
+  const openDemoPage = () => {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('demo.html') });
     }
   };
 
@@ -127,21 +203,53 @@ export const OverlayBusterPopup: React.FC = () => {
                 v1.0.0
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 truncate max-w-[190px]">{currentDomain}</p>
+            <p className="text-[11px] text-slate-400 truncate max-w-[170px]" title={currentDomain}>
+              {currentDomain}
+            </p>
           </div>
         </div>
 
-        <button
-          onClick={openDashboard}
-          className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-          title="Open Dashboard"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={openDemoPage}
+            className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/50 rounded-lg transition-colors border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1"
+            title="Open Demo Paywall Page"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Demo</span>
+          </button>
+          <button
+            onClick={openDashboard}
+            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+            title="Open Dashboard"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        {/* Internal Browser Page Warning Banner */}
+        {isInternalPage && (
+          <div className="p-3 bg-amber-500/15 border border-amber-500/30 rounded-xl space-y-2 text-xs text-amber-200">
+            <div className="flex items-center gap-2 font-semibold text-amber-300">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span>Internal Browser Tab</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-200/90">
+              Chrome restricts extensions from modifying <code className="bg-amber-950/60 px-1 py-0.5 rounded">chrome://</code> pages. To test OverlayBuster in action, launch the built-in interactive demo site!
+            </p>
+            <button
+              onClick={openDemoPage}
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow transition"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+              <span>Launch Live Paywall Demo Site</span>
+            </button>
+          </div>
+        )}
+
         {/* Domain Enable / Disable Toggle Card */}
         <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm">
           <div className="flex items-center gap-2.5">
