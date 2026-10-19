@@ -225,10 +225,6 @@ Contributions are welcome! Whether you want to report an issue, suggest a featur
 
 ---
 
-## 📄 License
-
-Distributed under the **MIT License**. See `LICENSE` for more information.
-
 <div align="center">
   <sub>Crafted with precision by <strong>Pathak</strong> • Made for power users who love clean, fast browsing.</sub>
 </div>
