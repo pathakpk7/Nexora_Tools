@@ -1,0 +1,45 @@
+{
+  "name": "nexora-tools-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nexora Tools - Premium, Independent Chrome Browser Utility Extensions",
+  "scripts": {
+    "dev:tabmind": "pnpm --filter @nexora/tabmind dev",
+    "dev:pagepocket": "pnpm --filter @nexora/pagepocket dev",
+    "dev:linksentry": "pnpm --filter @nexora/linksentry dev",
+    "dev:formfill": "pnpm --filter @nexora/formfill-pro dev",
+    "dev:citeright": "pnpm --filter @nexora/citeright dev",
+    "dev:lecturemark": "pnpm --filter @nexora/lecturemark dev",
+    "dev:website": "pnpm --filter @nexora/website dev",
+    "build:tabmind": "pnpm --filter @nexora/tabmind build",
+    "build:pagepocket": "pnpm --filter @nexora/pagepocket build",
+    "build:linksentry": "pnpm --filter @nexora/linksentry build",
+    "build:formfill": "pnpm --filter @nexora/formfill-pro build",
+    "build:citeright": "pnpm --filter @nexora/citeright build",
+    "build:lecturemark": "pnpm --filter @nexora/lecturemark build",
+    "build:website": "pnpm --filter @nexora/website build",
+    "build:all": "pnpm -r --filter \"@nexora/*\" build",
+    "test": "vitest run",
+    "typecheck": "tsc -b --dry",
+    "package:extensions": "node ./scripts/package-extensions.mjs",
+    "validate:manifests": "node ./scripts/validate-manifests.mjs"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.280",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "autoprefixer": "^10.4.20",
+    "lucide-react": "^0.468.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}
