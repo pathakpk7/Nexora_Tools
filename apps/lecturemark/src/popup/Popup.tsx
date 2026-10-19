@@ -213,16 +213,10 @@ export const Popup: React.FC = () => {
   };
 
   const openSidePanel = () => {
-    if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.open) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]?.id) {
-          chrome.sidePanel.open({ tabId: tabs[0].id }).catch(() => {
-            window.open(chrome.runtime.getURL('sidepanel.html'), '_blank');
-          });
-        }
-      });
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('sidepanel.html') });
     } else {
-      window.open(chrome.runtime.getURL('sidepanel.html'), '_blank');
+      window.open('sidepanel.html', '_blank');
     }
   };
 

@@ -4,12 +4,13 @@ import { formatSecondsToTimestamp } from '@nexora/browser-utils';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('LectureMark installed successfully.');
-  // Configure side panel behavior if supported
-  if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
-    chrome.sidePanel
-      .setPanelBehavior({ openPanelOnActionClick: false })
-      .catch((err) => console.log('Side panel config error:', err));
-  }
+  try {
+    if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+      chrome.sidePanel
+        .setPanelBehavior({ openPanelOnActionClick: false })
+        .catch(() => {});
+    }
+  } catch {}
 });
 
 // Listen for messages from popup/sidepanel/content scripts
@@ -22,15 +23,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'OPEN_SIDEPANEL') {
-    if (chrome.sidePanel && chrome.sidePanel.open && sender.tab?.id) {
-      chrome.sidePanel.open({ tabId: sender.tab.id }).catch(() => {
-        chrome.tabs.create({ url: chrome.runtime.getURL('sidepanel.html') });
-      });
-      sendResponse({ success: true });
-    } else {
-      chrome.tabs.create({ url: chrome.runtime.getURL('sidepanel.html') });
-      sendResponse({ success: true });
-    }
+    chrome.tabs.create({ url: chrome.runtime.getURL('sidepanel.html') });
+    sendResponse({ success: true });
     return true;
   }
 

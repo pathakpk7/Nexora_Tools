@@ -2,23 +2,31 @@ import { OverlayBusterService } from '../services/overlaybuster';
 
 // Context Menus
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'overlaybuster-bust-page',
-    title: '⚡ Bust Overlays & Unlock Scroll',
-    contexts: ['page'],
-  });
+  try {
+    if (chrome.contextMenus && chrome.contextMenus.removeAll) {
+      chrome.contextMenus.removeAll(() => {
+        try {
+          chrome.contextMenus.create({
+            id: 'overlaybuster-bust-page',
+            title: '⚡ Bust Overlays & Unlock Scroll',
+            contexts: ['page'],
+          });
 
-  chrome.contextMenus.create({
-    id: 'overlaybuster-zap-element',
-    title: '🎯 Zap Overlay Element',
-    contexts: ['page'],
-  });
+          chrome.contextMenus.create({
+            id: 'overlaybuster-zap-element',
+            title: '🎯 Zap Overlay Element',
+            contexts: ['page'],
+          });
 
-  chrome.contextMenus.create({
-    id: 'overlaybuster-reader-mode',
-    title: '📖 Distraction-Free Reader Mode',
-    contexts: ['page'],
-  });
+          chrome.contextMenus.create({
+            id: 'overlaybuster-reader-mode',
+            title: '📖 Distraction-Free Reader Mode',
+            contexts: ['page'],
+          });
+        } catch {}
+      });
+    }
+  } catch {}
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

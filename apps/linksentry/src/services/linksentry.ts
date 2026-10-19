@@ -8,28 +8,39 @@ export class LinkSentryService {
   static async getBookmarks(): Promise<BookmarkItem[]> {
     if (typeof chrome !== 'undefined' && chrome.bookmarks) {
       return new Promise((resolve) => {
-        chrome.bookmarks.getTree((tree) => {
-          const items: BookmarkItem[] = [];
-          const traverse = (nodes: chrome.bookmarks.BookmarkTreeNode[], path = '') => {
-            for (const node of nodes) {
-              const currentPath = path ? `${path} / ${node.title}` : node.title;
-              if (node.url) {
-                items.push({
-                  id: node.id,
-                  title: node.title || node.url,
-                  url: node.url,
-                  folderPath: path,
-                  dateAdded: node.dateAdded,
-                });
-              }
-              if (node.children) {
-                traverse(node.children, currentPath);
-              }
+        try {
+          chrome.bookmarks.getTree((tree) => {
+            if (chrome.runtime.lastError || !tree || !Array.isArray(tree)) {
+              resolve([]);
+              return;
             }
-          };
-          traverse(tree);
-          resolve(items);
-        });
+            const items: BookmarkItem[] = [];
+            const traverse = (nodes: chrome.bookmarks.BookmarkTreeNode[], path = '') => {
+              if (!nodes || !Array.isArray(nodes)) return;
+              for (const node of nodes) {
+                if (!node) continue;
+                const nodeTitle = node.title || '';
+                const currentPath = path ? `${path} / ${nodeTitle}` : nodeTitle;
+                if (node.url) {
+                  items.push({
+                    id: node.id,
+                    title: nodeTitle || node.url,
+                    url: node.url,
+                    folderPath: path,
+                    dateAdded: node.dateAdded,
+                  });
+                }
+                if (node.children && Array.isArray(node.children)) {
+                  traverse(node.children, currentPath);
+                }
+              }
+            };
+            traverse(tree);
+            resolve(items);
+          });
+        } catch {
+          resolve([]);
+        }
       });
     }
 
