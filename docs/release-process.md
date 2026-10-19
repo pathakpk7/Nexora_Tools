@@ -12,7 +12,8 @@ The individual archives are located in [`dist-zip/`](file:///c:/Users/patha/OneD
 3. **LinkSentry**: [`dist-zip/linksentry-v1.0.0.zip`](file:///c:/Users/patha/OneDrive/Desktop/NEXORA%20TOOLS/dist-zip/linksentry-v1.0.0.zip)
 4. **FormFill Pro**: [`dist-zip/formfill-pro-v1.0.0.zip`](file:///c:/Users/patha/OneDrive/Desktop/NEXORA%20TOOLS/dist-zip/formfill-pro-v1.0.0.zip)
 5. **LectureMark**: [`dist-zip/lecturemark-v1.0.0.zip`](file:///c:/Users/patha/OneDrive/Desktop/NEXORA%20TOOLS/dist-zip/lecturemark-v1.0.0.zip)
-6. **CiteRight**: [`dist-zip/citeright-v1.0.0.zip`](file:///c:/Users/patha/OneDrive/Desktop/NEXORA%20TOOLS/dist-zip/citeright-v1.0.0.zip)
+6. **OverlayBuster**: [`dist-zip/overlaybuster-v1.0.0.zip`](file:///c:/Users/patha/OneDrive/Desktop/NEXORA%20TOOLS/dist-zip/overlaybuster-v1.0.0.zip)
+7. **CiteRight**: [`dist-zip/citeright-v1.0.0.zip`](file:///c:/Users/patha/OneDrive/Desktop/NEXORA%20TOOLS/dist-zip/citeright-v1.0.0.zip)
 
 ---
 

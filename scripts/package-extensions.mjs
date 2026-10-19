@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const apps = ['tabmind', 'pagepocket', 'linksentry', 'formfill-pro', 'citeright', 'lecturemark'];
+const apps = ['tabmind', 'pagepocket', 'linksentry', 'formfill-pro', 'citeright', 'lecturemark', 'overlaybuster'];
 const distZipDir = path.resolve(process.cwd(), 'dist-zip');
 
 if (!fs.existsSync(distZipDir)) {

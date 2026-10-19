@@ -24,3 +24,7 @@ All four extensions follow the principle of least privilege required by Chrome E
 | | `scripting` | Required | Query hardware video playback time and seek to timestamps | Playback synchronization disabled |
 | | `sidePanel` | Required | Provide companion side-panel for taking notes side-by-side | Side panel note taking unavailable |
 | | `tabs` | Required | Query video tab across windows to control playback from dashboard | Multi-window seeking disabled |
+| **OverlayBuster** | `activeTab` | Required | Detect active webpage to identify blocking overlay dialogs and paywall blur | Active page cannot be inspected |
+| | `storage` | Required | Persist domain whitelist rules, custom selectors, and lifetime stats | Custom domain rules not saved |
+| | `scripting` | Required | Remove blocking DOM nodes, restore overflow scroll, and unblur text | Overlays cannot be removed |
+

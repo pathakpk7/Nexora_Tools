@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Validates all extension manifests
-const apps = ['tabmind', 'pagepocket', 'linksentry', 'formfill-pro', 'citeright', 'lecturemark'];
+const apps = ['tabmind', 'pagepocket', 'linksentry', 'formfill-pro', 'citeright', 'lecturemark', 'overlaybuster'];
 let hasError = false;
 
 console.log('--- Validating Extension Manifests ---');
